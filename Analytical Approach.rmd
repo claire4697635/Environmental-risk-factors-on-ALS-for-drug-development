@@ -1,0 +1,275 @@
+---
+title: "ALS project"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read the data:
+```{r}
+setwd("~/Desktop/ALS project")
+ALS <- read.csv("SYMPH_mat_pest_20200607.csv",head=T,sep=",")
+```
+
+
+### Exploratory analysis:
+
+Step 1: Find the year that splits the data to 2:1. Obtain the "old_ALS" data and "recent_ALS" data.
+```{r}
+library(dplyr)
+sum(is.na(ALS$dx_year))
+ALS %>% count(dx_year)
+ALS %>% count(ALS_stat)
+# the table that identifies the year as a threshold
+(year_split <- ALS %>% count(dx_year, ALS_stat))
+# remove the last row
+year_split <- year_split[1:7,]
+# calculate the cumulative summation of ALS stat in years sequentially
+year_split['stat_sum'] <- cumsum(year_split$n)
+# find the target year (with the cumulative probability)
+year_split['cum_prob'] <- year_split$stat_sum/26199 
+year_split # year 2016 is the threshold
+# subset the 2 datsets: with a ratio of 0.65:0.35
+old_ALS <- subset(ALS, dx_year<2017) 
+recent_ALS <- subset(ALS, dx_year>2016)
+no_ALS <-  subset(ALS, is.na(ALS[,8])) # or subset(ALS, ALS_stat=0))
+```
+
+
+step 2: Random assign the data to the training and testing sets
+```{r}
+Train_test <- sample(c("Train", "Test"), nrow(no_ALS), prob = c(0.65, 0.35), replace = TRUE)
+new_ALS <- cbind(Train_test,no_ALS) 
+Train_test <- matrix('Train',17119,1)
+old_ALS <- cbind(Train_test, old_ALS)
+Train_test <- matrix('Test',9080,1)
+recent_ALS <- cbind(Train_test, recent_ALS)
+new_ALS <- rbind(new_ALS, old_ALS, recent_ALS)
+reference <- new_ALS[,c('CCID','dx_year', 'Train_test')]
+write.csv(new_ALS,'new_ALS.csv',row.names=FALSE)
+write.csv(reference, 'data_split_assignment.csv',row.names=FALSE)
+```
+
+Step 3: data cleaning
+
+eliminate the columns that have more than 80% NA's:
+```{r}
+new_ALS <- read.csv("new_ALS.csv")
+train <- subset(new_ALS, Train_test=='Train') 
+na <- sapply(train, function(x) sum(is.na(x)))
+col_name <- names(train)
+for (i in c(14:459)){
+  prop <- na[i]/dim(train)[1]
+  if (prop > 0.8){
+    train[ ,col_name[i]] <- list(NULL)
+  }
+}
+# from the above results, we found and dropped 164 columns that have more than 80% NA's.
+cnt = 0
+for (i in c(14:295)){
+  prop <- na[i]/dim(train)[1]
+  if (prop > 0.5){
+    cnt = cnt + 1
+  }
+}
+cnt #there are still 149 predictors have more than 50% NA's 
+```
+
+
+Approach 1: use the smallest non-NA value then divide it by 2
+```{r}
+train_1 <- train
+min_val=0
+for (i in c(14:295)){
+  min_val <- min(train_1[,i],na.rm=TRUE) 
+  train_1[,i][is.na(train_1[,i])] <- min_val/2
+}
+sum(is.na(train_1[,c(14:295)]))
+```
+
+Approach 2: categorize the values to be NA = 0, lower than the median of the non-NA's = 1, higher than the median of the non-NA's = 2
+```{r}
+train_2 <- train
+for (i in c(14:295)){
+  median_val <- median(train_2[,i], na.rm=TRUE)
+  train_2[,i] <- replace(train_2[,i], train_2[,i] < median_val,1)
+  train_2[,i] <- replace(train_2[,i], train_2[,i] >= median_val,2)
+}
+train_2[,c(14:295)][is.na(train_2[,c(14:295)])] <- 0
+```
+
+
+Glinternet on Approach 1 - glinternet
+```{r}
+library(glinternet)
+X_1 <- train_1[,c(14:295)]
+X_1 <- as.matrix(X_1)
+Y_1 <- train_1[,11]
+numLevels = rep(1,282) # 282 predictors, set nlevel = 1 for continuous features
+g_fit <- glinternet.cv(X_1, Y_1, numLevels, nFolds = 3, family = "binomial")
+save.image(file='myEnvironment_continuous.RData')
+print(g_fit) # default nLambda = 50
+# i_1Std <- which(g_fit$lambdaHat1Std == g_fit$lambda)
+coeffs <- coef(g_fit)[[50]]
+coeffs$interactions$contcont
+table(Y_1)
+```
+
+Glinternet on Approach 2 - glinternet.cv
+```{r}
+# https://strakaps.github.io/post/glinternet/
+X_2 <- train_2[,c(14:295)]
+X_2 <- as.matrix(X_2)
+Y_2 <- train_2[,11]
+numLevels = rep(3,282)
+set.seed(1001)
+gcv_fit <- glinternet.cv(X_2, Y_2, numLevels, nFolds=3, family = "binomial")
+# glinternet.cv
+# lambdaHat
+# lanbdahat1std
+#nFolds = 3
+save.image(file='myEnvironment.RData')
+```
+
+
+cross-valid Glinternet on continuous variables
+```{r}
+# The continuous-variable version by feeding in X_1, Y_1 from approach 1, first run:
+# g_fit <- glinternet.cv(X_1, Y_1, numLevels, nFolds = 3, family = "binomial") 
+setwd("~/Desktop/ALS project")
+load('myEnvironment_numerical.RData')
+library(glinternet)
+# a plot that shows CV errors vs. lambda index. the dashed line represents lambdaHat index
+plot(g_fit)
+g_fit$lambdaHat1Std
+(which(g_fit$lambdaHat1Std == g_fit$lambda))
+g_fit$lambdaHat
+(i <- which(g_fit$lambdaHat == g_fit$lambda))
+coefs <- coef(g_fit$glinternetFit)[[i]]
+# build a table that saves the indices of attributes per pair of interaction
+coefs$interactions$contcont
+sum_table <- as.matrix(coefs$interactions$contcont)
+colnames(sum_table) <- c('Att_1_index','Att_2_index')
+# build a table that saves the names of attributes per pair of interaction
+name_arr <- names(train_1[14:295])
+name_table <- matrix(0,20,2)
+for (i in 1:20){
+  #x <- sum_table[i,1]
+  #y <- sum_table[i,2]
+  name_table[i,1] <- name_arr[sum_table[i,1]]
+  name_table[i,2] <- name_arr[sum_table[i,2]]
+}
+colnames(name_table) <- c('Att_1_name','Att_2_name')
+sum_table <- cbind(sum_table, name_table)
+sum_table <- as.data.frame(sum_table)
+sapply(sum_table,class)
+sum_table$Att_1_index <- as.numeric(as.character(sum_table$Att_1_index))
+sum_table$Att_2_index <- as.numeric(as.character(sum_table$Att_2_index))
+print(sum_table)
+# exlore the main effect attributes
+coefs$mainEffects$cont
+length(coefs$mainEffects$cont)
+#coefs$mainEffectsCoef
+# build a table that saves main effect coefficients:
+main_effect_table <- matrix(0,36,2)
+for (i in 1:36){
+  main_effect_table[i,1] <- coefs$mainEffects$cont[i]
+  main_effect_table[i,2] <- coefs$mainEffectsCoef$cont[[i]]
+}
+colnames(main_effect_table) <- c('Att_name','Coefficient')
+main_effect_table <- as.data.frame(main_effect_table)
+print(main_effect_table)
+# combine the main_effect_table and sum_table
+library(dplyr)
+sum_table <- left_join(sum_table, main_effect_table, by = c("Att_1_index" = "Att_name"))
+#rename(sum_table, Att_1_main_coefs = Coefficient)
+names(sum_table)[names(sum_table) == "Coefficient"] <- "Att_1_main_coefs"
+sum_table <- left_join(sum_table, main_effect_table, by = c("Att_2_index" = "Att_name"))
+names(sum_table)[names(sum_table) == "Coefficient"] <- "Att_2_main_coefs"
+# build the table that saves the corresponding coefficients
+sum_table[,"interaction_coef"] <- NA
+for (i in 1:20){
+  sum_table[i,7] <- coefs$interactionsCoef$contcont[[i]]
+}
+print(sum_table)
+```
+
+
+Generate the test set
+```{r}
+coef_table <- read.csv("interaction table.csv")
+test <- subset(new_ALS, Train_test=='Test')
+# select the columns that exist in the train set:
+test_no_clean <- test[names(train_2[1:295])]
+#categorize the test set:
+for (i in c(14:295)){
+  median_val <- median(test_no_clean[,i], na.rm=TRUE)
+  test_no_clean[,i] <- replace(test_no_clean[,i], test_no_clean[,i] < median_val,1)
+  test_no_clean[,i] <- replace(test_no_clean[,i], test_no_clean[,i] >= median_val,2)
+}
+test_no_clean[,c(14:295)][is.na(test_no_clean[,c(14:295)])] <- 0
+# generate X, Y, Age, and Sex to fit in the glm model:
+X_2_test <- test_no_clean[,c(14:295)]
+X_2_test <- as.matrix(X_2_test)
+Y_2_test <- test_no_clean[,11]
+Age <- test_no_clean[,10]
+Sex <- test_no_clean[,7]
+max(X_2_test)
+min(X_2_test)
+for (i in name_arr){
+  X_2_test[, i] <- factor(X_2_test[, i])
+}
+X_2_test[,i]
+names(X_2_test)
+class(X_2_test[1,1])
+sapply(X_2_test,class)
+summary(glm(Y_2_test ~ Age + Sex + X_2_test[,1]* X_2_test[,187]))
+# Build a table that saves the estimated coefficient and p-value for the interaction pairs
+test_table <- matrix(0,603,2)
+for (i in c(1:603)){
+  x1 <- coef_table[i,1]
+  x2 <- coef_table[i,2]
+  test_table[i,1] <- summary(glm(Y_2_test ~ Age + Sex + X_2_test[,x1]* X_2_test[,x2]))$coefficients[6,1]
+  test_table[i,2] <- summary(glm(Y_2_test ~ Age + Sex + X_2_test[,x1]* X_2_test[,x2]))$coefficients[6,4]
+}
+colnames(test_table) <- c('Estimated_Coef', 'p_value')
+coef_table <- cbind(coef_table, test_table)
+```
+
+
+Explore the table:
+```{r}
+new_coef <- coef_table[coef_table$p_value <0.05,]
+dim(new_coef) # 235 pairs are significant
+names(new_coef)
+#write.csv(new_coef,'table with p value.csv',row.names=FALSE)
+new_coef[new_coef$Estimated_Coef>0,]
+```
+
+
+```{r}
+library(fdrtool)
+fdr = fdrtool(sum_table$p_value, statistic="pvalue")
+sum_table[,'p_adjusted'] <- fdr$pval
+dim(sum_table)
+sum_table <- sum_table[sum_table$p_adjusted <0.2,]
+sum_table <- sum_table[sum_table$int_coef_glm>0,]
+library(tableone)
+att = c("ALDICARB", "FLONICAMID", "KAOLIN.CLAY", "PROHEXADIONE", "FENARIMOL", "TRIASULFURON", "OXAMYL", "PYRIPROXYFEN")
+table1 <- CreateTableOne(vars = att,
+                         data = test_3,
+                         strata = 'ALS_stat')
+table1 <- print(table1, showAllLevels = TRUE,  formatOptions = list(big.mark = ","))
+summary(table1)
+table2 <- CreateTableOne(vars = att,
+                         data = train_2,
+                         strata = 'ALS_stat')
+table2 <- print(table2, showAllLevels = TRUE,  formatOptions = list(big.mark = ","))
+summary(table2)
+table_sum <- rbind(table1,table2)
+write.csv(table_sum, "tableone.csv")
+```
