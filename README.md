@@ -11,8 +11,9 @@ We will perform case-control studies of exposures to individual pollutants as ri
 ## Work flow:
 
 ### Random Assignment and Random split:
-1. Find the year that splits the data to roughly 2:1. Obtain the "old_ALS" data and "recent_ALS" data. (with actual ratio of 65%:35%)
-2. In the control group (No ALS), randomly assign 65% to the "train" set and 35% to the "test" set. 
+(control group: ALS group = 2:1)
+1. Find the year that splits the data to roughly 2:1. Obtain the "old_ALS" data and "recent_ALS" data. (with actual ratio of 0.65:0.35)
+2. In the control group (No ALS), randomly split the data to the "train" set and "test" set with a ratio of 0.65:0.35. 
 3. Bind in the experimental group (the ALS patients):  old_ALS to the "train" set, and the recent_ALS to the "test" set.
 
 ### Data Cleaning: Clean the data in two ways to generate continuous-variable version and categorical-variable version for different preliminary analysis:
