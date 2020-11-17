@@ -3,7 +3,7 @@
 
 
 ## Project Background (to be updated): 
-ALS, or Amyotrophic lateral sclerosis, is a nervous system disease in which a person’s brain loses connections with the muscles. It is hard to be diagnosed til avg. 9 month later, with the avg. life expectancy to be 2-5 years. Currently, 4 drugs have been developed to treat ALS. Although, none of them can cure ALS. The existing drug developed by Mitsubishi can only slow down the process of developing ALS by 25%-30%. It cost roughly $2B to develop a new drug.
+ALS, or Amyotrophic lateral sclerosis, is a nervous system disease in which a person’s brain loses connections with the muscles. It is hard to be diagnosed til avg. 9 month later, with the avg. life expectancy of 2-5 years. Currently, 4 drugs have been developed to treat ALS. Although, none of them can cure ALS. The existing drug developed by Mitsubishi can only slow down the process of developing ALS by 25%-30%. It cost roughly $2B to develop a new drug.
 
 Therefore, researchers and scientists are seeking a different pathway to improve the performance of the drug. Study has shown that classes of environmental toxins increase the likelihood of ALS, especially in regard to pesticides. However, people are likely exposed to multiple chemicals. It is too soon for the scientists to know which individual chemicals, or mixtures of chemicals, lead to motor neuron damage. On the other hand, Some of environmental toxicants have synergistic effects
 
