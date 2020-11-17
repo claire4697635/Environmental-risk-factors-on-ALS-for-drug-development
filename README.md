@@ -10,7 +10,7 @@ Therefore, researchers and scientists are seeking a different pathway to improve
 One pathway of drug development for treatment of ALS depends on the ethnobotanical identification of flora with either toxic or therapeutic activity.
 
 ## Project Goal：
-TO improve the drug performance and safe budget efficiently, we performed the case-control study of exposures to individual pollutants as risk factors for ALS and find environmental pollutants that are risk factors for the development of ALS. By doing pairwise interaction analysis, we expect to search through (485 choose 2) pairs of toxicants and identify the individual environmental pollutants with synergistic effects for new drug development for the treatment of ALS.
+To improve the drug performance as well as saving time and investment budget, we performed the case-control study of exposures to individual pollutants as risk factors for ALS and find environmental pollutants that are risk factors for the development of ALS. By doing pairwise interaction analysis, we expect to search through (485 choose 2) pairs of toxicants and identify the individual environmental pollutants with synergistic effects for new drug development for the treatment of ALS.
 
 
 I worked on developing the model tested on the old patients data to predict the future cohort’s disease outcome.
