@@ -1,12 +1,20 @@
 # Mitsubishi-Project-Environmental-risk-factors-on-ALS-for-drug-development
-（Demo slides to be updated）
+
 
 
 ## Project Background (to be updated): 
+ALS, or Amyotrophic lateral sclerosis, is a nervous system disease in which a person’s brain loses connections with the muscles. It is hard to be diagnosed til avg. 9 month later, with the avg. life expectancy to be 2-5 years. Currently, 4 drugs have been developed to treat ALS. Although, none of them can cure ALS. The existing drug developed by Mitsubishi can only slow down the process of developing ALS by 25%-30%. It cost roughly $2B to develop a new drug.
+
+Therefore, researchers and scientists are seeking a different pathway to improve the performance of the drug. Study has shown that classes of environmental toxins increase the likelihood of ALS, especially in regard to pesticides. However, people are likely exposed to multiple chemicals. It is too soon for the scientists to know which individual chemicals, or mixtures of chemicals, lead to motor neuron damage. On the other hand, Some of environmental toxicants have synergistic effects
+
 One pathway of drug development for treatment of ALS depends on the ethnobotanical identification of flora with either toxic or therapeutic activity.
 
 ## Project Goal：
-We will perform case-control studies of exposures to individual pollutants as risk factors for ALS using Geographical Information System (GIS) methodologies. Following the previous research, we expect to identify the potential synergistic effects of individual environmental pollutants for new drug development for the treatment of ALS.
+TO improve the drug performance and safe budget efficiently, we performed the case-control study of exposures to individual pollutants as risk factors for ALS and find environmental pollutants that are risk factors for the development of ALS. By doing pairwise interaction analysis, we expect to search through (485 choose 2) pairs of toxicants and identify the individual environmental pollutants with synergistic effects for new drug development for the treatment of ALS.
+
+
+I worked on developing the model tested on the old patients data to predict the future cohort’s disease outcome.
+
 
 ## Work flow:
 
